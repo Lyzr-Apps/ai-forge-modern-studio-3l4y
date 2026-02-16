@@ -631,16 +631,16 @@ function OverviewScreen({ metrics, editions, pipelineStages, loading, onRegenDra
                     <p className="text-[10px] text-muted-foreground tracking-wider">{ed.date}</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-3">
                   <Button
-                    variant="ghost"
+                    variant="outline"
                     size="sm"
                     onClick={() => onDeliverToEmail(ed)}
                     disabled={loading}
-                    className="text-xs px-2 text-muted-foreground hover:text-primary"
-                    title="Deliver to email"
+                    className="text-xs tracking-wider px-3"
                   >
-                    <FiMail size={14} />
+                    <FiMail size={12} className="mr-1" />
+                    Deliver
                   </Button>
                   <StatusBadge status={ed.status} />
                 </div>
