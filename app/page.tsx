@@ -66,7 +66,6 @@ import {
   RiPaletteLine,
   RiMailSendLine,
   RiCalendarScheduleLine,
-  RiGithubLine,
   RiGoogleLine,
 } from 'react-icons/ri'
 
@@ -1271,7 +1270,7 @@ function SettingsScreen({ schedules, onToggleSchedule, onTriggerNow, schedulesLo
             <div className="flex items-center justify-between py-2">
               <div className="flex items-center gap-2">
                 <RiGoogleLine size={16} className="text-muted-foreground" />
-                <span className="text-sm font-light">Gmail</span>
+                <span className="text-sm font-light">Gmail (Composio)</span>
               </div>
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 bg-emerald-500" />
@@ -1281,12 +1280,12 @@ function SettingsScreen({ schedules, onToggleSchedule, onTriggerNow, schedulesLo
             <Separator className="opacity-30" />
             <div className="flex items-center justify-between py-2">
               <div className="flex items-center gap-2">
-                <RiGithubLine size={16} className="text-muted-foreground" />
-                <span className="text-sm font-light">GitHub</span>
+                <FiSearch size={16} className="text-muted-foreground" />
+                <span className="text-sm font-light">Web Search (Research)</span>
               </div>
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 bg-emerald-500" />
-                <span className="text-[10px] text-emerald-400 tracking-widest uppercase">Connected</span>
+                <span className="text-[10px] text-emerald-400 tracking-widest uppercase">Active</span>
               </div>
             </div>
           </div>
