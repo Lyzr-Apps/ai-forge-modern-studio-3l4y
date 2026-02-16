@@ -420,6 +420,90 @@ function StatusBadge({ status }: { status: string }) {
   )
 }
 
+function DeliverEmailDialog({ open, onOpenChange, edition, loading, onDeliver }: {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  edition: Edition | null
+  loading: boolean
+  onDeliver: (email: string) => void
+}) {
+  const [email, setEmail] = useState('')
+  const [error, setError] = useState('')
+
+  const handleSubmit = () => {
+    const trimmed = email.trim()
+    if (!trimmed || !trimmed.includes('@') || !trimmed.includes('.')) {
+      setError('Please enter a valid email address')
+      return
+    }
+    setError('')
+    onDeliver(trimmed)
+  }
+
+  useEffect(() => {
+    if (!open) {
+      setEmail('')
+      setError('')
+    }
+  }, [open])
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md bg-card border-border">
+        <DialogHeader>
+          <DialogTitle className="font-serif font-light tracking-wide flex items-center gap-2">
+            <FiMail size={16} style={{ color: GOLD }} />
+            Deliver to Email
+          </DialogTitle>
+        </DialogHeader>
+        {edition && (
+          <div className="space-y-4">
+            <div className="p-3 bg-secondary/50 border border-border">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="font-serif text-sm" style={{ color: GOLD }}>#{edition.id}</span>
+                <StatusBadge status={edition.status} />
+              </div>
+              <p className="text-sm font-light">{edition.subject}</p>
+              <p className="text-[10px] text-muted-foreground tracking-wider mt-1">{edition.date}</p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="deliver-email" className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground">
+                Recipient Email
+              </Label>
+              <Input
+                id="deliver-email"
+                type="email"
+                placeholder="recipient@example.com"
+                value={email}
+                onChange={(e) => { setEmail(e.target.value); setError('') }}
+                onKeyDown={(e) => { if (e.key === 'Enter') handleSubmit() }}
+                className="bg-input border-border text-sm"
+                disabled={loading}
+              />
+              {error && <p className="text-[10px] text-red-400 tracking-wider">{error}</p>}
+            </div>
+
+            <Button
+              onClick={handleSubmit}
+              disabled={loading || !email.trim()}
+              className="w-full text-xs tracking-wider"
+              style={{ backgroundColor: GOLD, color: 'hsl(30, 8%, 6%)' }}
+            >
+              {loading ? (
+                <FiLoader size={12} className="mr-2 animate-spin" />
+              ) : (
+                <FiSend size={12} className="mr-2" />
+              )}
+              {loading ? 'Sending...' : 'Send Newsletter'}
+            </Button>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  )
+}
+
 function AgentInfoPanel({ activeAgentId }: { activeAgentId: string | null }) {
   const agents = [
     { id: AGENT_IDS.orchestrator, name: 'Newsletter Orchestrator', purpose: 'Research + Editorial', icon: <RiRobot2Line size={14} /> },
@@ -456,7 +540,7 @@ function AgentInfoPanel({ activeAgentId }: { activeAgentId: string | null }) {
 // SCREEN: OVERVIEW
 // ============================================================================
 
-function OverviewScreen({ metrics, editions, pipelineStages, loading, onRegenDraft, onRegenImage, onResend, activeAgentId }: {
+function OverviewScreen({ metrics, editions, pipelineStages, loading, onRegenDraft, onRegenImage, onResend, onDeliverToEmail, activeAgentId }: {
   metrics: Metrics
   editions: Edition[]
   pipelineStages: PipelineStage[]
@@ -464,6 +548,7 @@ function OverviewScreen({ metrics, editions, pipelineStages, loading, onRegenDra
   onRegenDraft: () => void
   onRegenImage: () => void
   onResend: () => void
+  onDeliverToEmail: (edition: Edition) => void
   activeAgentId: string | null
 }) {
   const hasFailed = pipelineStages.some(s => s.status === 'failed')
@@ -546,7 +631,19 @@ function OverviewScreen({ metrics, editions, pipelineStages, loading, onRegenDra
                     <p className="text-[10px] text-muted-foreground tracking-wider">{ed.date}</p>
                   </div>
                 </div>
-                <StatusBadge status={ed.status} />
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => onDeliverToEmail(ed)}
+                    disabled={loading}
+                    className="text-xs px-2 text-muted-foreground hover:text-primary"
+                    title="Deliver to email"
+                  >
+                    <FiMail size={14} />
+                  </Button>
+                  <StatusBadge status={ed.status} />
+                </div>
               </div>
             ))}
           </div>
@@ -842,7 +939,7 @@ function GalleryScreen({ editions, onRegenImage, loading }: {
 // SCREEN: EDITIONS ARCHIVE
 // ============================================================================
 
-function EditionsScreen({ editions }: { editions: Edition[] }) {
+function EditionsScreen({ editions, onDeliverToEmail, loading }: { editions: Edition[]; onDeliverToEmail: (edition: Edition) => void; loading: boolean }) {
   const [expandedId, setExpandedId] = useState<number | null>(null)
   const [quizAnswer, setQuizAnswer] = useState<string | null>(null)
   const [showExplanation, setShowExplanation] = useState(false)
@@ -965,6 +1062,21 @@ function EditionsScreen({ editions }: { editions: Edition[] }) {
                     <div className="text-sm font-light text-foreground/80">{renderMarkdown(ed.research_summary)}</div>
                   </div>
                 )}
+
+                <Separator className="opacity-30" />
+
+                <div className="flex items-center justify-end">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={(e) => { e.stopPropagation(); onDeliverToEmail(ed) }}
+                    disabled={loading}
+                    className="text-xs tracking-wider"
+                  >
+                    <FiMail size={12} className="mr-1" />
+                    Deliver to Email
+                  </Button>
+                </div>
               </div>
             )}
           </Card>
@@ -1198,6 +1310,9 @@ export default function Page() {
   const [statusMsg, setStatusMsg] = useState<StatusMessage | null>(null)
 
   const [sampleMode, setSampleMode] = useState(false)
+  const [deliverDialogOpen, setDeliverDialogOpen] = useState(false)
+  const [deliverEdition, setDeliverEdition] = useState<Edition | null>(null)
+  const [deliverLoading, setDeliverLoading] = useState(false)
 
   const [pipelineStages, setPipelineStages] = useState<PipelineStage[]>([
     { name: 'Research', icon: <FiSearch size={14} />, status: 'complete' },
@@ -1424,6 +1539,44 @@ export default function Page() {
     setSchedulesLoading(false)
   }, [])
 
+  // ----- Deliver to email -----
+  const openDeliverDialog = useCallback((edition: Edition) => {
+    setDeliverEdition(edition)
+    setDeliverDialogOpen(true)
+  }, [])
+
+  const handleDeliverToEmail = useCallback(async (email: string) => {
+    if (!deliverEdition) return
+    setDeliverLoading(true)
+    setActiveAgentId(AGENT_IDS.delivery)
+    setStatusMsg({ type: 'info', text: `Delivering edition #${deliverEdition.id} to ${email}...` })
+
+    try {
+      const result = await callAIAgent(
+        `Send newsletter edition #${deliverEdition.id} titled "${deliverEdition.subject}" to the email address: ${email}. The lead story is: ${deliverEdition.lead_title}. Content: ${deliverEdition.lead_content ?? 'N/A'}. Research summary: ${deliverEdition.research_summary ?? 'N/A'}.`,
+        AGENT_IDS.delivery
+      )
+
+      if (result.success) {
+        const data = result?.response?.result
+        const deliveryStatus = (data?.delivery_status as string) ?? ''
+        if (deliveryStatus.toLowerCase().includes('success') || deliveryStatus.toLowerCase().includes('sent')) {
+          setStatusMsg({ type: 'success', text: `Edition #${deliverEdition.id} delivered to ${email} successfully.` })
+        } else {
+          setStatusMsg({ type: 'success', text: `Edition #${deliverEdition.id} sent to ${email}.` })
+        }
+      } else {
+        setStatusMsg({ type: 'error', text: result?.error ?? `Failed to deliver to ${email}.` })
+      }
+    } catch {
+      setStatusMsg({ type: 'error', text: `Network error delivering to ${email}.` })
+    }
+
+    setDeliverLoading(false)
+    setActiveAgentId(null)
+    setDeliverDialogOpen(false)
+  }, [deliverEdition])
+
   // ----- Sample data toggle -----
   const handleSampleToggle = useCallback((checked: boolean) => {
     setSampleMode(checked)
@@ -1478,6 +1631,7 @@ export default function Page() {
                 onRegenDraft={handleRegenDraft}
                 onRegenImage={() => handleRegenImage()}
                 onResend={handleResend}
+                onDeliverToEmail={openDeliverDialog}
                 activeAgentId={activeAgentId}
               />
             )}
@@ -1495,7 +1649,7 @@ export default function Page() {
             )}
 
             {activeTab === 'editions' && (
-              <EditionsScreen editions={editions} />
+              <EditionsScreen editions={editions} onDeliverToEmail={openDeliverDialog} loading={loading || deliverLoading} />
             )}
 
             {activeTab === 'settings' && (
@@ -1510,6 +1664,14 @@ export default function Page() {
           </main>
         </ScrollArea>
       </div>
+
+      <DeliverEmailDialog
+        open={deliverDialogOpen}
+        onOpenChange={setDeliverDialogOpen}
+        edition={deliverEdition}
+        loading={deliverLoading}
+        onDeliver={handleDeliverToEmail}
+      />
     </div>
   )
 }
