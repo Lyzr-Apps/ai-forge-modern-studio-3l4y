@@ -633,14 +633,14 @@ function OverviewScreen({ metrics, editions, pipelineStages, loading, onRegenDra
                 </div>
                 <div className="flex items-center gap-3">
                   <Button
-                    variant="outline"
                     size="sm"
                     onClick={() => onDeliverToEmail(ed)}
                     disabled={loading}
-                    className="text-xs tracking-wider px-3"
+                    className="text-xs tracking-wider px-4 py-2 font-medium border-0"
+                    style={{ backgroundColor: GOLD, color: 'hsl(30, 8%, 6%)' }}
                   >
-                    <FiMail size={12} className="mr-1" />
-                    Deliver
+                    <FiMail size={14} className="mr-2" />
+                    Deliver to Email
                   </Button>
                   <StatusBadge status={ed.status} />
                 </div>
@@ -1067,13 +1067,13 @@ function EditionsScreen({ editions, onDeliverToEmail, loading }: { editions: Edi
 
                 <div className="flex items-center justify-end">
                   <Button
-                    variant="outline"
                     size="sm"
                     onClick={(e) => { e.stopPropagation(); onDeliverToEmail(ed) }}
                     disabled={loading}
-                    className="text-xs tracking-wider"
+                    className="text-xs tracking-wider px-4 py-2 font-medium border-0"
+                    style={{ backgroundColor: GOLD, color: 'hsl(30, 8%, 6%)' }}
                   >
-                    <FiMail size={12} className="mr-1" />
+                    <FiMail size={14} className="mr-2" />
                     Deliver to Email
                   </Button>
                 </div>
@@ -1309,7 +1309,7 @@ export default function Page() {
   const [activeAgentId, setActiveAgentId] = useState<string | null>(null)
   const [statusMsg, setStatusMsg] = useState<StatusMessage | null>(null)
 
-  const [sampleMode, setSampleMode] = useState(false)
+  const [sampleMode, setSampleMode] = useState(true)
   const [deliverDialogOpen, setDeliverDialogOpen] = useState(false)
   const [deliverEdition, setDeliverEdition] = useState<Edition | null>(null)
   const [deliverLoading, setDeliverLoading] = useState(false)
