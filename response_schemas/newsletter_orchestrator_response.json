@@ -1,0 +1,62 @@
+{
+  "agent_name": "Newsletter Orchestrator",
+  "agent_id": "699313373f10687c1b733643",
+  "description": "Coordinates research and editorial compilation; routes findings to the editor and aggregates the final newsletter draft",
+  "agent_type": "json",
+  "accessor": "result",
+  "auto_generated": true,
+  "response_schema": {
+    "pipeline_status": "string",
+    "edition_number": "number",
+    "date": "string",
+    "subject_line": "string",
+    "the_lead": {
+      "title": "string",
+      "content": "string",
+      "source_url": "string"
+    },
+    "the_classifieds": [
+      {
+        "title": "string",
+        "summary": "string",
+        "source_url": "string"
+      }
+    ],
+    "the_terminal_challenge": {
+      "question": "string",
+      "options": [
+        "string"
+      ],
+      "correct_answer": "string",
+      "explanation": "string"
+    },
+    "research_summary": "string"
+  },
+  "example_response": {
+    "pipeline_status": "sample string",
+    "edition_number": 0,
+    "date": "sample string",
+    "subject_line": "sample string",
+    "the_lead": {
+      "title": "sample string",
+      "content": "sample string",
+      "source_url": "sample string"
+    },
+    "the_classifieds": [
+      {
+        "title": "sample string",
+        "summary": "sample string",
+        "source_url": "sample string"
+      }
+    ],
+    "the_terminal_challenge": {
+      "question": "sample string",
+      "options": [
+        "sample string"
+      ],
+      "correct_answer": "sample string",
+      "explanation": "sample string"
+    },
+    "research_summary": "sample string"
+  }
+}

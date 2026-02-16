@@ -1,0 +1,28 @@
+{
+  "agent_name": "Visual Agent",
+  "agent_id": "6993135225f124ed75877416",
+  "description": "Generates a daily architectural diagram/infographic using the brand gold and grey accent palette based on the day's lead story",
+  "agent_type": "json",
+  "accessor": "result",
+  "auto_generated": true,
+  "response_schema": {
+    "infographic_description": "string",
+    "story_title": "string",
+    "edition_date": "string",
+    "design_notes": "string"
+  },
+  "example_response": {
+    "infographic_description": "sample string",
+    "story_title": "sample string",
+    "edition_date": "sample string",
+    "design_notes": "sample string"
+  },
+  "has_module_outputs": true,
+  "module_outputs_example": {
+    "artifact_files": [
+      {
+        "file_url": "https://example.com/image.png"
+      }
+    ]
+  }
+}

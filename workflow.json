@@ -1,0 +1,74 @@
+{
+  "project_name": "The AI Forge",
+  "workflow": {
+    "nodes": [
+      {
+        "id": "input_node",
+        "type": "Input",
+        "label": "Daily Trigger / Manual Re-trigger",
+        "nodeCategory": "input"
+      },
+      {
+        "id": "newsletter_orchestrator",
+        "type": "Agent",
+        "label": "Newsletter Orchestrator (Manager)",
+        "nodeCategory": "agent",
+        "agent_id": "699313373f10687c1b733643",
+        "provider": "openai",
+        "model": "gpt-4.1"
+      },
+      {
+        "id": "researcher_agent",
+        "type": "Agent",
+        "label": "Researcher Agent (Sub)",
+        "nodeCategory": "agent",
+        "agent_id": "699313231642f60bc66327f3",
+        "provider": "perplexity",
+        "model": "perplexity/sonar-pro"
+      },
+      {
+        "id": "editor_agent",
+        "type": "Agent",
+        "label": "Editor Agent (Sub)",
+        "nodeCategory": "agent",
+        "agent_id": "69931324b3c66312fa478bc9",
+        "provider": "anthropic",
+        "model": "claude-sonnet-4-5"
+      },
+      {
+        "id": "visual_agent",
+        "type": "Agent",
+        "label": "Visual Agent (Image)",
+        "nodeCategory": "agent",
+        "agent_id": "6993135225f124ed75877416",
+        "provider": "google",
+        "model": "gemini-2.5-pro",
+        "has_image_output": true
+      },
+      {
+        "id": "delivery_agent",
+        "type": "Agent",
+        "label": "Delivery Agent (Gmail)",
+        "nodeCategory": "agent",
+        "agent_id": "699313531642f60bc66327f6",
+        "provider": "openai",
+        "model": "gpt-4.1",
+        "has_gmail": true
+      },
+      {
+        "id": "output_node",
+        "type": "Output",
+        "label": "Newsletter Delivered",
+        "nodeCategory": "end"
+      }
+    ],
+    "edges": [
+      {"source": "input_node", "target": "newsletter_orchestrator"},
+      {"source": "newsletter_orchestrator", "target": "researcher_agent"},
+      {"source": "newsletter_orchestrator", "target": "editor_agent"},
+      {"source": "newsletter_orchestrator", "target": "visual_agent"},
+      {"source": "visual_agent", "target": "delivery_agent"},
+      {"source": "delivery_agent", "target": "output_node"}
+    ]
+  }
+}

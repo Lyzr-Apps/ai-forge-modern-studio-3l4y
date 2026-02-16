@@ -1,0 +1,65 @@
+{
+  "project_name": "The AI Forge",
+  "agents": {
+    "newsletter_orchestrator": {
+      "agent_id": "699313373f10687c1b733643",
+      "type": "manager",
+      "provider": "openai",
+      "model": "gpt-4.1",
+      "managed_agents": ["699313231642f60bc66327f3", "69931324b3c66312fa478bc9"]
+    },
+    "researcher_agent": {
+      "agent_id": "699313231642f60bc66327f3",
+      "type": "sub-agent",
+      "provider": "perplexity",
+      "model": "perplexity/sonar-pro",
+      "has_github_tool": true
+    },
+    "editor_agent": {
+      "agent_id": "69931324b3c66312fa478bc9",
+      "type": "sub-agent",
+      "provider": "anthropic",
+      "model": "claude-sonnet-4-5"
+    },
+    "visual_agent": {
+      "agent_id": "6993135225f124ed75877416",
+      "type": "independent",
+      "provider": "google",
+      "model": "gemini-2.5-pro",
+      "has_image_output": true,
+      "image_output_config": {
+        "model": "gemini/gemini-3-pro-image-preview"
+      }
+    },
+    "delivery_agent": {
+      "agent_id": "699313531642f60bc66327f6",
+      "type": "independent",
+      "provider": "openai",
+      "model": "gpt-4.1",
+      "has_gmail": true
+    }
+  },
+  "schedules": {
+    "orchestrator_schedule": {
+      "schedule_id": "69931361399dfadeac37756a",
+      "agent_id": "699313373f10687c1b733643",
+      "cron": "0 8 * * *",
+      "timezone": "America/New_York",
+      "description": "Daily at 8:00 AM ET - Run newsletter pipeline"
+    },
+    "visual_schedule": {
+      "schedule_id": "69931361399dfadeac37756b",
+      "agent_id": "6993135225f124ed75877416",
+      "cron": "5 8 * * *",
+      "timezone": "America/New_York",
+      "description": "Daily at 8:05 AM ET - Generate infographic"
+    },
+    "delivery_schedule": {
+      "schedule_id": "69931361399dfadeac37756c",
+      "agent_id": "699313531642f60bc66327f6",
+      "cron": "10 8 * * *",
+      "timezone": "America/New_York",
+      "description": "Daily at 8:10 AM ET - Send newsletter via Gmail"
+    }
+  }
+}

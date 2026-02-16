@@ -1,0 +1,32 @@
+{
+  "agent_name": "Delivery Agent",
+  "agent_id": "699313531642f60bc66327f6",
+  "description": "Sends the finalized newsletter edition (text + infographic) to the subscriber list via Gmail",
+  "agent_type": "json",
+  "accessor": "result",
+  "auto_generated": true,
+  "response_schema": {
+    "delivery_status": "string",
+    "recipients_count": "number",
+    "sent_at": "string",
+    "subject_line": "string",
+    "edition_number": "number",
+    "error_message": "string"
+  },
+  "example_response": {
+    "delivery_status": "sample string",
+    "recipients_count": 0,
+    "sent_at": "sample string",
+    "subject_line": "sample string",
+    "edition_number": 0,
+    "error_message": "sample string"
+  },
+  "has_module_outputs": true,
+  "module_outputs_example": {
+    "artifact_files": [
+      {
+        "file_url": "https://example.com/image.png"
+      }
+    ]
+  }
+}
