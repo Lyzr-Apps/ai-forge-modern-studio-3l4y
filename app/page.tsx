@@ -420,12 +420,13 @@ function StatusBadge({ status }: { status: string }) {
   )
 }
 
-function DeliverEmailDialog({ open, onOpenChange, edition, loading, onDeliver }: {
+function DeliverEmailDialog({ open, onOpenChange, edition, loading, onDeliver, deliveryResult }: {
   open: boolean
   onOpenChange: (open: boolean) => void
   edition: Edition | null
   loading: boolean
   onDeliver: (email: string) => void
+  deliveryResult: { type: 'success' | 'error' | 'info'; text: string } | null
 }) {
   const [email, setEmail] = useState('')
   const [error, setError] = useState('')
@@ -467,37 +468,61 @@ function DeliverEmailDialog({ open, onOpenChange, edition, loading, onDeliver }:
               <p className="text-[10px] text-muted-foreground tracking-wider mt-1">{edition.date}</p>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="deliver-email" className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground">
-                Recipient Email
-              </Label>
-              <Input
-                id="deliver-email"
-                type="email"
-                placeholder="recipient@example.com"
-                value={email}
-                onChange={(e) => { setEmail(e.target.value); setError('') }}
-                onKeyDown={(e) => { if (e.key === 'Enter') handleSubmit() }}
-                className="bg-input border-border text-sm"
-                disabled={loading}
-              />
-              {error && <p className="text-[10px] text-red-400 tracking-wider">{error}</p>}
-            </div>
+            {deliveryResult ? (
+              <div className="space-y-3">
+                <div className={`p-4 border text-sm ${deliveryResult.type === 'success' ? 'border-emerald-600/30 bg-emerald-600/10 text-emerald-400' : deliveryResult.type === 'error' ? 'border-red-600/30 bg-red-600/10 text-red-400' : 'border-primary/30 bg-primary/10 text-primary'}`}>
+                  <div className="flex items-center gap-2 mb-2">
+                    {deliveryResult.type === 'success' ? <HiCheck size={16} /> : deliveryResult.type === 'error' ? <HiXMark size={16} /> : <FiActivity size={16} />}
+                    <span className="text-xs tracking-[0.15em] uppercase font-medium">
+                      {deliveryResult.type === 'success' ? 'Delivered' : deliveryResult.type === 'error' ? 'Delivery Failed' : 'Status'}
+                    </span>
+                  </div>
+                  <p className="text-xs font-light leading-relaxed">{deliveryResult.text}</p>
+                </div>
+                <Button
+                  type="button"
+                  onClick={() => onOpenChange(false)}
+                  variant="outline"
+                  className="w-full text-xs tracking-wider"
+                >
+                  Close
+                </Button>
+              </div>
+            ) : (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="deliver-email" className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground">
+                    Recipient Email
+                  </Label>
+                  <Input
+                    id="deliver-email"
+                    type="email"
+                    placeholder="recipient@example.com"
+                    value={email}
+                    onChange={(e) => { setEmail(e.target.value); setError('') }}
+                    onKeyDown={(e) => { if (e.key === 'Enter' && !loading) handleSubmit() }}
+                    className="bg-input border-border text-sm"
+                    disabled={loading}
+                  />
+                  {error && <p className="text-[10px] text-red-400 tracking-wider">{error}</p>}
+                </div>
 
-            <Button
-              type="button"
-              onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleSubmit() }}
-              disabled={loading || !email.trim()}
-              className="w-full text-xs tracking-wider"
-              style={{ backgroundColor: GOLD, color: 'hsl(30, 8%, 6%)' }}
-            >
-              {loading ? (
-                <FiLoader size={12} className="mr-2 animate-spin" />
-              ) : (
-                <FiSend size={12} className="mr-2" />
-              )}
-              {loading ? 'Sending...' : 'Send Newsletter'}
-            </Button>
+                <Button
+                  type="button"
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleSubmit() }}
+                  disabled={loading || !email.trim()}
+                  className="w-full text-xs tracking-wider"
+                  style={{ backgroundColor: GOLD, color: 'hsl(30, 8%, 6%)' }}
+                >
+                  {loading ? (
+                    <FiLoader size={12} className="mr-2 animate-spin" />
+                  ) : (
+                    <FiSend size={12} className="mr-2" />
+                  )}
+                  {loading ? 'Sending via Gmail...' : 'Send Newsletter'}
+                </Button>
+              </>
+            )}
           </div>
         )}
       </DialogContent>
@@ -1327,6 +1352,7 @@ export default function Page() {
   const [deliverDialogOpen, setDeliverDialogOpen] = useState(false)
   const [deliverEdition, setDeliverEdition] = useState<Edition | null>(null)
   const [deliverLoading, setDeliverLoading] = useState(false)
+  const [deliveryResult, setDeliveryResult] = useState<{ type: 'success' | 'error' | 'info'; text: string } | null>(null)
   const deliverEditionRef = useRef<Edition | null>(null)
 
   const [pipelineStages, setPipelineStages] = useState<PipelineStage[]>([
@@ -1598,6 +1624,7 @@ export default function Page() {
   const openDeliverDialog = useCallback((edition: Edition) => {
     deliverEditionRef.current = edition
     setDeliverEdition(edition)
+    setDeliveryResult(null)
     setDeliverDialogOpen(true)
   }, [])
 
@@ -1605,6 +1632,7 @@ export default function Page() {
     const edition = deliverEditionRef.current
     if (!edition) return
     setDeliverLoading(true)
+    setDeliveryResult(null)
     setActiveAgentId(AGENT_IDS.delivery)
     setStatusMsg({ type: 'info', text: `Delivering edition #${edition.id} to ${email}...` })
 
@@ -1618,23 +1646,30 @@ export default function Page() {
       const msg = result?.response?.message ?? ''
       const deliveryStatus = (data?.delivery_status as string) ?? ''
       const errorMessage = (data?.error_message as string) ?? ''
+      const responseDetail = `Status: ${deliveryStatus || 'N/A'} | Recipients: ${data?.recipients_count ?? 'N/A'} | Error: ${errorMessage || 'none'} | Agent: ${msg || 'no message'}`
 
       if (!result.success) {
-        setStatusMsg({ type: 'error', text: result?.error ?? `Failed to deliver to ${email}.` })
-      } else if (errorMessage && errorMessage.toLowerCase() !== 'none' && errorMessage.toLowerCase() !== 'n/a' && errorMessage.length > 1) {
+        const errText = result?.error ?? `Failed to deliver to ${email}.`
+        setDeliveryResult({ type: 'error', text: errText })
+        setStatusMsg({ type: 'error', text: errText })
+      } else if (errorMessage && errorMessage.toLowerCase() !== 'none' && errorMessage.toLowerCase() !== 'n/a' && errorMessage.trim().length > 1) {
+        setDeliveryResult({ type: 'error', text: `Delivery error: ${errorMessage}\n\n${responseDetail}` })
         setStatusMsg({ type: 'error', text: `Delivery error: ${errorMessage}` })
       } else if (deliveryStatus.toLowerCase().includes('sent') || deliveryStatus.toLowerCase().includes('success') || deliveryStatus.toLowerCase().includes('delivered')) {
-        setStatusMsg({ type: 'success', text: `Edition #${edition.id} delivered to ${email}. ${msg ? 'Agent: ' + msg.slice(0, 100) : ''}`.trim() })
+        setDeliveryResult({ type: 'success', text: `Email sent to ${email}.\n\n${responseDetail}` })
+        setStatusMsg({ type: 'success', text: `Edition #${edition.id} delivered to ${email}.` })
       } else {
-        setStatusMsg({ type: 'info', text: `Agent response: ${deliveryStatus || msg || JSON.stringify(data).slice(0, 150)}` })
+        setDeliveryResult({ type: 'info', text: `Delivery status unclear. The agent responded but may not have sent the email.\n\n${responseDetail}` })
+        setStatusMsg({ type: 'info', text: `Delivery status: ${deliveryStatus || 'unknown'}` })
       }
-    } catch {
-      setStatusMsg({ type: 'error', text: `Network error delivering to ${email}.` })
+    } catch (err) {
+      const errText = `Network error delivering to ${email}. ${err instanceof Error ? err.message : ''}`
+      setDeliveryResult({ type: 'error', text: errText })
+      setStatusMsg({ type: 'error', text: errText })
     }
 
     setDeliverLoading(false)
     setActiveAgentId(null)
-    setDeliverDialogOpen(false)
   }, [])
 
   // ----- Sample data toggle -----
@@ -1667,9 +1702,9 @@ export default function Page() {
 
       <div className="flex-1 min-h-screen">
         <header className="px-8 py-4 border-b border-border flex items-center justify-between">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-1 min-w-0">
             {statusMsg && (
-              <div className={`text-xs tracking-wider ${statusMsg.type === 'success' ? 'text-emerald-400' : statusMsg.type === 'error' ? 'text-red-400' : 'text-primary'}`}>
+              <div className={`text-sm tracking-wider px-3 py-1.5 border max-w-xl truncate ${statusMsg.type === 'success' ? 'text-emerald-400 border-emerald-600/30 bg-emerald-600/10' : statusMsg.type === 'error' ? 'text-red-400 border-red-600/30 bg-red-600/10' : 'text-primary border-primary/30 bg-primary/10'}`}>
                 {statusMsg.text}
               </div>
             )}
@@ -1735,10 +1770,11 @@ export default function Page() {
 
       <DeliverEmailDialog
         open={deliverDialogOpen}
-        onOpenChange={(open) => { if (!deliverLoading) setDeliverDialogOpen(open) }}
+        onOpenChange={(open) => { if (!deliverLoading) { setDeliverDialogOpen(open); if (!open) setDeliveryResult(null) } }}
         edition={deliverEdition}
         loading={deliverLoading}
         onDeliver={handleDeliverToEmail}
+        deliveryResult={deliveryResult}
       />
     </div>
   )
