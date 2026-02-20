@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { callAIAgent } from '@/lib/aiAgent'
 import {
   getSchedule,
@@ -449,7 +449,7 @@ function DeliverEmailDialog({ open, onOpenChange, edition, loading, onDeliver }:
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md bg-card border-border">
+      <DialogContent className="max-w-md bg-card border-border" onInteractOutside={(e) => { if (loading) e.preventDefault() }}>
         <DialogHeader>
           <DialogTitle className="font-serif font-light tracking-wide flex items-center gap-2">
             <FiMail size={16} style={{ color: GOLD }} />
@@ -485,7 +485,8 @@ function DeliverEmailDialog({ open, onOpenChange, edition, loading, onDeliver }:
             </div>
 
             <Button
-              onClick={handleSubmit}
+              type="button"
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleSubmit() }}
               disabled={loading || !email.trim()}
               className="w-full text-xs tracking-wider"
               style={{ backgroundColor: GOLD, color: 'hsl(30, 8%, 6%)' }}
@@ -1326,6 +1327,7 @@ export default function Page() {
   const [deliverDialogOpen, setDeliverDialogOpen] = useState(false)
   const [deliverEdition, setDeliverEdition] = useState<Edition | null>(null)
   const [deliverLoading, setDeliverLoading] = useState(false)
+  const deliverEditionRef = useRef<Edition | null>(null)
 
   const [pipelineStages, setPipelineStages] = useState<PipelineStage[]>([
     { name: 'Research', icon: <FiSearch size={14} />, status: 'complete' },
@@ -1589,19 +1591,21 @@ export default function Page() {
 
   // ----- Deliver to email -----
   const openDeliverDialog = useCallback((edition: Edition) => {
+    deliverEditionRef.current = edition
     setDeliverEdition(edition)
     setDeliverDialogOpen(true)
   }, [])
 
   const handleDeliverToEmail = useCallback(async (email: string) => {
-    if (!deliverEdition) return
+    const edition = deliverEditionRef.current
+    if (!edition) return
     setDeliverLoading(true)
     setActiveAgentId(AGENT_IDS.delivery)
-    setStatusMsg({ type: 'info', text: `Delivering edition #${deliverEdition.id} to ${email}...` })
+    setStatusMsg({ type: 'info', text: `Delivering edition #${edition.id} to ${email}...` })
 
     try {
       const result = await callAIAgent(
-        `Send newsletter edition #${deliverEdition.id} titled "${deliverEdition.subject}" to the email address: ${email}. The lead story is: ${deliverEdition.lead_title}. Content: ${deliverEdition.lead_content ?? 'N/A'}. Research summary: ${deliverEdition.research_summary ?? 'N/A'}.`,
+        `Send newsletter edition #${edition.id} titled "${edition.subject}" to the email address: ${email}. The lead story is: ${edition.lead_title}. Content: ${edition.lead_content ?? 'N/A'}. Research summary: ${edition.research_summary ?? 'N/A'}.`,
         AGENT_IDS.delivery
       )
 
@@ -1609,9 +1613,9 @@ export default function Page() {
         const data = result?.response?.result
         const deliveryStatus = (data?.delivery_status as string) ?? ''
         if (deliveryStatus.toLowerCase().includes('success') || deliveryStatus.toLowerCase().includes('sent')) {
-          setStatusMsg({ type: 'success', text: `Edition #${deliverEdition.id} delivered to ${email} successfully.` })
+          setStatusMsg({ type: 'success', text: `Edition #${edition.id} delivered to ${email} successfully.` })
         } else {
-          setStatusMsg({ type: 'success', text: `Edition #${deliverEdition.id} sent to ${email}.` })
+          setStatusMsg({ type: 'success', text: `Edition #${edition.id} sent to ${email}.` })
         }
       } else {
         setStatusMsg({ type: 'error', text: result?.error ?? `Failed to deliver to ${email}.` })
@@ -1623,7 +1627,7 @@ export default function Page() {
     setDeliverLoading(false)
     setActiveAgentId(null)
     setDeliverDialogOpen(false)
-  }, [deliverEdition])
+  }, [])
 
   // ----- Sample data toggle -----
   const handleSampleToggle = useCallback((checked: boolean) => {
@@ -1723,7 +1727,7 @@ export default function Page() {
 
       <DeliverEmailDialog
         open={deliverDialogOpen}
-        onOpenChange={setDeliverDialogOpen}
+        onOpenChange={(open) => { if (!deliverLoading) setDeliverDialogOpen(open) }}
         edition={deliverEdition}
         loading={deliverLoading}
         onDeliver={handleDeliverToEmail}
