@@ -1520,15 +1520,46 @@ export default function Page() {
 
     try {
       const latestEdition = editions[0]
+      const recipientList = subscriberEmails.length > 0 ? subscriberEmails.join(', ') : 'team@company.com'
+
+      const classifiedsText = Array.isArray(latestEdition?.classifieds) && latestEdition.classifieds.length > 0
+        ? latestEdition.classifieds.map((c, i) => `${i + 1}. ${c.title}: ${c.summary}`).join('\n')
+        : 'None'
+
+      const emailBody = [
+        `THE LEAD: ${latestEdition?.lead_title ?? 'Latest AI News'}`,
+        latestEdition?.lead_content ?? '',
+        '',
+        'THE CLASSIFIEDS:',
+        classifiedsText,
+        '',
+        latestEdition?.research_summary ? `RESEARCH SUMMARY: ${latestEdition.research_summary}` : '',
+      ].filter(Boolean).join('\n')
+
       const result = await callAIAgent(
-        `Send newsletter edition #${latestEdition?.id ?? 'latest'} with subject "${latestEdition?.subject ?? 'AI Newsletter'}" to subscriber list.`,
+        `You MUST use the GMAIL_SEND_EMAIL tool to send an email right now. Do NOT just describe what you would do - actually call the tool.
+
+Recipient email address (to): ${recipientList}
+Email subject: ${latestEdition?.subject ?? 'AI Newsletter'}
+Email body:
+${emailBody}
+
+Send this email immediately using the GMAIL_SEND_EMAIL tool. This is edition #${latestEdition?.id ?? 'latest'}.`,
         AGENT_IDS.delivery
       )
 
       if (result.success) {
         const data = result?.response?.result
+        const rawResponse = (result?.raw_response ?? '').toLowerCase()
         const deliveryStatus = (data?.delivery_status as string) ?? ''
-        if (deliveryStatus.toLowerCase().includes('success') || deliveryStatus.toLowerCase().includes('sent')) {
+        const errorMessage = (data?.error_message as string) ?? ''
+        const statusLower = deliveryStatus.toLowerCase()
+        const hasError = errorMessage.length > 0 && !errorMessage.toLowerCase().includes('none') && !errorMessage.toLowerCase().includes('n/a')
+
+        if (hasError) {
+          setPipelineStages((prev) => prev.map((s, i) => i === 3 ? { ...s, status: 'failed' as const } : s))
+          setStatusMsg({ type: 'error', text: `Delivery failed: ${errorMessage}` })
+        } else if (statusLower.includes('success') || statusLower.includes('sent') || statusLower.includes('delivered') || rawResponse.includes('sent') || rawResponse.includes('delivered') || rawResponse.includes('gmail_send_email')) {
           setEditions((prev) => {
             const updated = [...prev]
             if (updated.length > 0) {
@@ -1538,7 +1569,7 @@ export default function Page() {
           })
           setMetrics((prev) => ({ ...prev, todayStatus: 'sent' }))
           setPipelineStages((prev) => prev.map((s, i) => i === 3 ? { ...s, status: 'complete' as const } : s))
-          setStatusMsg({ type: 'success', text: `Delivered to ${(data?.recipients_count as number) ?? 'N/A'} recipients.` })
+          setStatusMsg({ type: 'success', text: `Delivered to ${(data?.recipients_count as number) ?? subscriberEmails.length} recipients.` })
         } else {
           setPipelineStages((prev) => prev.map((s, i) => i === 3 ? { ...s, status: 'failed' as const } : s))
           setStatusMsg({ type: 'error', text: (data?.error_message as string) ?? 'Delivery status unclear.' })
@@ -1553,7 +1584,7 @@ export default function Page() {
     }
     setActiveAgentId(null)
     setLoading(false)
-  }, [editions])
+  }, [editions, subscriberEmails])
 
   // ----- Schedule handlers -----
   const handleToggleSchedule = useCallback(async (scheduleId: string, currentActive: boolean) => {
@@ -1603,19 +1634,49 @@ export default function Page() {
     setActiveAgentId(AGENT_IDS.delivery)
     setStatusMsg({ type: 'info', text: `Delivering edition #${edition.id} to ${email}...` })
 
+    const classifiedsText = Array.isArray(edition.classifieds) && edition.classifieds.length > 0
+      ? edition.classifieds.map((c, i) => `${i + 1}. ${c.title}: ${c.summary}`).join('\n')
+      : 'None'
+
+    const emailBody = [
+      `Subject: ${edition.subject}`,
+      '',
+      `THE LEAD: ${edition.lead_title}`,
+      edition.lead_content ?? '',
+      '',
+      'THE CLASSIFIEDS:',
+      classifiedsText,
+      '',
+      edition.research_summary ? `RESEARCH SUMMARY: ${edition.research_summary}` : '',
+    ].filter(Boolean).join('\n')
+
     try {
       const result = await callAIAgent(
-        `Send newsletter edition #${edition.id} titled "${edition.subject}" to the email address: ${email}. The lead story is: ${edition.lead_title}. Content: ${edition.lead_content ?? 'N/A'}. Research summary: ${edition.research_summary ?? 'N/A'}.`,
+        `You MUST use the GMAIL_SEND_EMAIL tool to send an email right now. Do NOT just describe what you would do - actually call the tool.
+
+Recipient email address (to): ${email}
+Email subject: ${edition.subject}
+Email body:
+${emailBody}
+
+Send this email immediately using the GMAIL_SEND_EMAIL tool. The recipient is ${email}. This is edition #${edition.id}.`,
         AGENT_IDS.delivery
       )
 
       if (result.success) {
         const data = result?.response?.result
+        const rawResponse = (result?.raw_response ?? '').toLowerCase()
         const deliveryStatus = (data?.delivery_status as string) ?? ''
-        if (deliveryStatus.toLowerCase().includes('success') || deliveryStatus.toLowerCase().includes('sent')) {
+        const errorMessage = (data?.error_message as string) ?? ''
+        const statusLower = deliveryStatus.toLowerCase()
+        const hasError = errorMessage.length > 0 && !errorMessage.toLowerCase().includes('none') && !errorMessage.toLowerCase().includes('n/a')
+
+        if (hasError) {
+          setStatusMsg({ type: 'error', text: `Delivery failed: ${errorMessage}` })
+        } else if (statusLower.includes('success') || statusLower.includes('sent') || statusLower.includes('delivered') || rawResponse.includes('sent') || rawResponse.includes('delivered') || rawResponse.includes('gmail_send_email')) {
           setStatusMsg({ type: 'success', text: `Edition #${edition.id} delivered to ${email} successfully.` })
         } else {
-          setStatusMsg({ type: 'success', text: `Edition #${edition.id} sent to ${email}.` })
+          setStatusMsg({ type: 'info', text: `Edition #${edition.id} delivery requested for ${email}. Check inbox shortly.` })
         }
       } else {
         setStatusMsg({ type: 'error', text: result?.error ?? `Failed to deliver to ${email}.` })
