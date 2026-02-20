@@ -60,6 +60,7 @@ import {
   FiLoader,
   FiActivity,
   FiEdit3,
+  FiSave,
 } from 'react-icons/fi'
 import {
   RiRobot2Line,
@@ -1089,19 +1090,22 @@ function EditionsScreen({ editions, onDeliverToEmail, loading }: { editions: Edi
 // SCREEN: SETTINGS
 // ============================================================================
 
-function SettingsScreen({ schedules, onToggleSchedule, onTriggerNow, schedulesLoading, statusMsg }: {
+function SettingsScreen({ schedules, onToggleSchedule, onTriggerNow, schedulesLoading, statusMsg, deliveryTime, setDeliveryTime, subscriberEmails, setSubscriberEmails, autoDelivery, setAutoDelivery, onSaveSettings, settingsSaved }: {
   schedules: { id: string; name: string; agentId: string; cron: string; timezone: string; isActive: boolean; nextRun: string | null }[]
   onToggleSchedule: (id: string, currentActive: boolean) => void
   onTriggerNow: (id: string) => void
   schedulesLoading: boolean
   statusMsg: StatusMessage | null
+  deliveryTime: string
+  setDeliveryTime: (v: string) => void
+  subscriberEmails: string[]
+  setSubscriberEmails: React.Dispatch<React.SetStateAction<string[]>>
+  autoDelivery: boolean
+  setAutoDelivery: (v: boolean) => void
+  onSaveSettings: () => void
+  settingsSaved: boolean
 }) {
-  const [deliveryTime, setDeliveryTime] = useState('08:00')
-  const [subscriberEmails, setSubscriberEmails] = useState<string[]>([
-    'team@company.com', 'dev-leads@company.com', 'cto@startup.io'
-  ])
   const [emailInput, setEmailInput] = useState('')
-  const [autoDelivery, setAutoDelivery] = useState(true)
 
   const addEmail = () => {
     const email = emailInput.trim()
@@ -1117,9 +1121,19 @@ function SettingsScreen({ schedules, onToggleSchedule, onTriggerNow, schedulesLo
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="font-serif text-2xl font-light tracking-wide">Settings</h2>
-        <p className="text-xs text-muted-foreground tracking-widest uppercase mt-1">Pipeline Configuration</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="font-serif text-2xl font-light tracking-wide">Settings</h2>
+          <p className="text-xs text-muted-foreground tracking-widest uppercase mt-1">Pipeline Configuration</p>
+        </div>
+        <Button
+          onClick={onSaveSettings}
+          className="text-xs tracking-wider px-5 py-2 font-medium border-0"
+          style={{ backgroundColor: GOLD, color: 'hsl(30, 8%, 6%)' }}
+        >
+          {settingsSaved ? <HiCheck size={14} className="mr-2" /> : <FiSave size={14} className="mr-2" />}
+          {settingsSaved ? 'Saved' : 'Save Settings'}
+        </Button>
       </div>
 
       {statusMsg && (
@@ -1326,6 +1340,41 @@ export default function Page() {
     { id: SCHEDULE_IDS.delivery, name: 'Delivery Agent', agentId: AGENT_IDS.delivery, cron: '10 8 * * *', timezone: 'America/New_York', isActive: true, nextRun: null },
   ])
   const [schedulesLoading, setSchedulesLoading] = useState(false)
+
+  // ----- Settings state (lifted for persistence) -----
+  const [deliveryTime, setDeliveryTime] = useState('08:00')
+  const [subscriberEmails, setSubscriberEmails] = useState<string[]>([
+    'team@company.com', 'dev-leads@company.com', 'cto@startup.io'
+  ])
+  const [autoDelivery, setAutoDelivery] = useState(true)
+  const [settingsSaved, setSettingsSaved] = useState(false)
+
+  // Load settings from localStorage on mount
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('aiforge_settings')
+      if (saved) {
+        const parsed = JSON.parse(saved)
+        if (parsed.deliveryTime) setDeliveryTime(parsed.deliveryTime)
+        if (Array.isArray(parsed.subscriberEmails)) setSubscriberEmails(parsed.subscriberEmails)
+        if (typeof parsed.autoDelivery === 'boolean') setAutoDelivery(parsed.autoDelivery)
+      }
+    } catch {
+      // ignore parse errors, use defaults
+    }
+  }, [])
+
+  const handleSaveSettings = useCallback(() => {
+    try {
+      const settings = { deliveryTime, subscriberEmails, autoDelivery }
+      localStorage.setItem('aiforge_settings', JSON.stringify(settings))
+      setSettingsSaved(true)
+      setStatusMsg({ type: 'success', text: 'Settings saved successfully.' })
+      setTimeout(() => setSettingsSaved(false), 2000)
+    } catch {
+      setStatusMsg({ type: 'error', text: 'Failed to save settings.' })
+    }
+  }, [deliveryTime, subscriberEmails, autoDelivery])
 
   const pipelineOverall: 'complete' | 'running' | 'failed' | 'idle' = pipelineStages.some(s => s.status === 'failed') ? 'failed' :
     pipelineStages.some(s => s.status === 'running') ? 'running' :
@@ -1658,6 +1707,14 @@ export default function Page() {
                 onTriggerNow={handleTriggerNow}
                 schedulesLoading={schedulesLoading}
                 statusMsg={statusMsg}
+                deliveryTime={deliveryTime}
+                setDeliveryTime={setDeliveryTime}
+                subscriberEmails={subscriberEmails}
+                setSubscriberEmails={setSubscriberEmails}
+                autoDelivery={autoDelivery}
+                setAutoDelivery={setAutoDelivery}
+                onSaveSettings={handleSaveSettings}
+                settingsSaved={settingsSaved}
               />
             )}
           </main>
