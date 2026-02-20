@@ -1644,9 +1644,10 @@ export default function Page() {
 
       const data = result?.response?.result ?? {}
       const msg = result?.response?.message ?? ''
-      const deliveryStatus = (data?.delivery_status as string) ?? ''
+      const deliveryStatus = (data?.delivery_status as string) ?? (data?.status as string) ?? ''
       const errorMessage = (data?.error_message as string) ?? ''
-      const responseDetail = `Status: ${deliveryStatus || 'N/A'} | Recipients: ${data?.recipients_count ?? 'N/A'} | Error: ${errorMessage || 'none'} | Agent: ${msg || 'no message'}`
+      const rawSnippet = (result?.raw_response ?? '').slice(0, 300)
+      const responseDetail = `Status: ${deliveryStatus || 'N/A'} | Recipients: ${data?.recipients_count ?? 'N/A'} | Error: ${errorMessage || 'none'} | Agent: ${msg || 'no message'} | Raw: ${rawSnippet}`
 
       if (!result.success) {
         const errText = result?.error ?? `Failed to deliver to ${email}.`
@@ -1659,7 +1660,7 @@ export default function Page() {
         setDeliveryResult({ type: 'success', text: `Email sent to ${email}.\n\n${responseDetail}` })
         setStatusMsg({ type: 'success', text: `Edition #${edition.id} delivered to ${email}.` })
       } else {
-        setDeliveryResult({ type: 'info', text: `Delivery status unclear. The agent responded but may not have sent the email.\n\n${responseDetail}` })
+        setDeliveryResult({ type: 'info', text: `Delivery status unclear.\n\n${responseDetail}` })
         setStatusMsg({ type: 'info', text: `Delivery status: ${deliveryStatus || 'unknown'}` })
       }
     } catch (err) {

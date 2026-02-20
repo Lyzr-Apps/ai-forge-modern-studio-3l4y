@@ -149,8 +149,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const finalUserId = user_id || `user-${generateUUID()}`
-    const finalSessionId = session_id || `${agent_id}-${generateUUID().substring(0, 12)}`
+    const finalUserId = user_id || LYZR_API_KEY || 'default-user'
+    const finalSessionId = session_id || `${agent_id}-${finalUserId.substring(0, 12)}`
 
     const payload: Record<string, any> = {
       message,
