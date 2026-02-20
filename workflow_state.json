@@ -13,7 +13,7 @@
       "type": "sub-agent",
       "provider": "perplexity",
       "model": "perplexity/sonar-pro",
-      "has_github_tool": true
+      "has_github_tool": false
     },
     "editor_agent": {
       "agent_id": "69931324b3c66312fa478bc9",

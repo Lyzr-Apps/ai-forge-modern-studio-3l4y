@@ -1309,24 +1309,24 @@ function SettingsScreen({ schedules, onToggleSchedule, onTriggerNow, schedulesLo
           <div className="space-y-3">
             <div className="flex items-center justify-between py-2">
               <div className="flex items-center gap-2">
-                <RiGoogleLine size={16} className="text-amber-400" />
+                <RiGoogleLine size={16} className="text-muted-foreground" />
                 <span className="text-sm font-light">Gmail (Composio)</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-amber-500 animate-pulse" />
-                <span className="text-[10px] text-amber-400 tracking-widest uppercase">Setup Required</span>
+                <div className="w-2 h-2 bg-emerald-500" />
+                <span className="text-[10px] text-emerald-400 tracking-widest uppercase">Connected</span>
               </div>
             </div>
-            <div className="px-2 py-2 border border-amber-600/20 bg-amber-600/5">
-              <p className="text-[11px] text-amber-300/80 leading-relaxed">
-                Gmail OAuth must be authenticated in <span className="text-amber-200 font-medium">Lyzr Studio</span> for email delivery to work. Go to your Lyzr Studio workspace, navigate to the Delivery Agent&apos;s Composio tool settings, and complete the Gmail OAuth connection.
+            <div className="px-2 py-1.5">
+              <p className="text-[11px] text-muted-foreground/70 leading-relaxed">
+                Authenticated as franipd2025@gmail.com
               </p>
             </div>
             <Separator className="opacity-30" />
             <div className="flex items-center justify-between py-2">
               <div className="flex items-center gap-2">
                 <FiSearch size={16} className="text-muted-foreground" />
-                <span className="text-sm font-light">Web Search (Research)</span>
+                <span className="text-sm font-light">Web Search (Perplexity)</span>
               </div>
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 bg-emerald-500" />
